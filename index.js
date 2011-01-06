@@ -83,14 +83,27 @@ var mutateHttp = function(http){
     var args = slice.call(arguments), headers = args[args.length-1];
     if (!headers || typeof(headers) != 'object') {
       // No header arg - create and append to args list
-      args.push(headers = []);
+      args.push(headers = {});
     }
   
     // Merge cookie values
     var prev = headers[COOKIE_KEY], cookies = this.cookies || [];
     if (prev) cookies.push(prev);
-    if (cookies.length > 0) headers[COOKIE_KEY] = cookies.join(" ");
-  
+    if (cookies.length > 0) {
+      // we have to use the array form for headers,
+      // http://caolanmcmahon.com/multiple_set_cookie_headers_in_node_js.html
+      var new_headers = [];
+      for (var k in headers) {
+        if (headers.hasOwnProperty(k)) {
+          new_headers.push([k, headers[k]]);
+        }
+      }
+      for (var i=0; i<cookies.length; i++) {
+        new_headers.push([COOKIE_KEY, cookies[i]]);
+      }
+      args[args.length-1] = new_headers;
+    }
+
     // Invoke original writeHead()
     _writeHead.apply(this, args);
   };
